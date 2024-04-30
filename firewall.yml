@@ -1,0 +1,9 @@
+---
+- name: Stop Firewall on CentOS 7
+  hosts: servers
+  become: yes
+  tasks:
+    - name: Stop firewalld service
+      service:
+        name: firewalld
+        state: stopped

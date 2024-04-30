@@ -1,0 +1,16 @@
+---
+- name: Pre-Config
+  hosts: servers
+  become: yes
+  tasks:
+    - name: scripts
+      command: "systemctl stop firewalld"
+    
+    - name: root-lmv
+      shell: |
+        tar -czvf /root/home.tgz -C /home . && tar -tvf /root/home.tgz && umount /dev/mapper/centos-home && lvremove /dev/mapper/centos-home
+        lvcreate -L 20GB -n home centos
+        mkfs.xfs /dev/centos/home && mount /dev/mapper/centos-home && lvextend -r -l +100%FREE /dev/mapper/centos-root && tar -xzvf /root/home.tgz -C /home
+    - name: root-lmv-20gb
+      debug:
+        msg: "==========set root to 20gb lmv==========="

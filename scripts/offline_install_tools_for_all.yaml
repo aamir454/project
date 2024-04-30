@@ -1,0 +1,88 @@
+---
+- name: offline install
+  hosts: "{{DEPLOY_SERVER}}"
+  remote_user: root
+  gather_facts: false
+  tasks:
+  - name: sync env file
+    copy:
+      src: "{{ ENV_FILE}}"
+      dest: "/tmp/"
+    tags:
+      - always
+
+  - name: disableSwap
+    script: on-premise.sh --executeFunction disableSwap
+    tags:
+      - disableSwap
+
+  - name: CheckVMStatus
+    script: on-premise.sh --env_file /tmp/{{ENV_FILE}} --work_dir {{WORK_DIR}} --executeFunction CheckVMStatus
+    register: out
+    tags:
+      - CheckVMStatus
+
+  - name: print CheckVMStatus
+    debug: var=out.stdout_lines
+    tags:
+      - CheckVMStatus
+
+  - name: installDocker
+    script: on-premise.sh --env_file /tmp/{{ENV_FILE}} --work_dir {{WORK_DIR}} --executeFunction installDocker
+    tags:
+      - installDocker
+
+  - name: installRancherLoadImagesScript
+    script: on-premise.sh --env_file /tmp/{{ENV_FILE}} --work_dir {{WORK_DIR}} --executeFunction installRancherLoadImagesScript
+    tags:
+    - installRancherLoadImagesScript
+
+  - name: installMC
+    script: on-premise.sh --env_file /tmp/{{ENV_FILE}} --work_dir {{WORK_DIR}} --executeFunction installMC
+    tags:
+    - installMC
+
+  - name: installYq
+    script: on-premise.sh --env_file /tmp/{{ENV_FILE}} --work_dir {{WORK_DIR}} --executeFunction installYq
+    tags:
+    - installYq
+
+  - name: installDockerCompose
+    script: on-premise.sh --env_file /tmp/{{ENV_FILE}} --work_dir {{WORK_DIR}} --executeFunction installDockerCompose
+    tags:
+    - installDockerCompose
+
+  - name: addSelfCAForDocker
+    script: on-premise.sh --env_file /tmp/{{ENV_FILE}} --work_dir {{WORK_DIR}} --executeFunction addSelfCAForDocker
+    tags:
+    - addSelfCAForDocker
+
+  - name: installHelm
+    script: on-premise.sh --env_file /tmp/{{ENV_FILE}} --work_dir {{WORK_DIR}} --executeFunction installHelm
+    tags:
+    - installHelm
+
+  - name: installHelmfile
+    script: on-premise.sh --env_file /tmp/{{ENV_FILE}} --work_dir {{WORK_DIR}} --executeFunction installHelmfile
+    tags:
+    - installHelmfile
+
+  - name: installJq
+    script: on-premise.sh --env_file /tmp/{{ENV_FILE}} --work_dir {{WORK_DIR}} --executeFunction installJq
+    tags:
+    - installJq
+
+  - name: installKubeCLI
+    script: on-premise.sh --env_file /tmp/{{ENV_FILE}} --work_dir {{WORK_DIR}} --executeFunction installKubeCLI
+    tags:
+    - installKubeCLI
+
+  - name: installArgoCLI
+    script: on-premise.sh --env_file /tmp/{{ENV_FILE}} --work_dir {{WORK_DIR}} --executeFunction installArgoCLI
+    tags:
+    - installArgoCLI
+
+  - name: installPgoCLI
+    script: on-premise.sh --env_file /tmp/{{ENV_FILE}} --work_dir {{WORK_DIR}} --executeFunction installPgoCLI
+    tags:
+    - installPgoCLI

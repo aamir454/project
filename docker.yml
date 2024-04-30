@@ -1,0 +1,73 @@
+---
+- name: Install Docker CE 20.10.10 on CentOS 7
+  hosts: servers
+  become: yes
+  tasks:
+    - name: Install required packages
+      yum:
+        name:
+          - yum-utils
+          - device-mapper-persistent-data
+          - lvm2
+
+#    - name: Add Docker CE repository
+#      yum_repository:
+#        name: docker-ce-stable
+#        description: Docker CE Stable - $basearch
+#        baseurl: https://download.docker.com/linux/centos/7/$basearch/stable
+#        gpgcheck: yes
+#        enabled: yes
+#        gpgkey: https://download.docker.com/linux/centos/gpg
+#
+#    - name: Install specific version of Docker CE
+#      yum:
+#        name: docker-ce-20.10.10
+#        state: present
+#
+#    - name: Start Docker service
+#      service:
+#        name: docker
+#        state: started
+#        enabled: yes
+
+
+    - name: Download Docker client binary
+      get_url:
+        url: https://download.docker.com/linux/static/stable/x86_64/docker-20.10.10.tgz
+        dest: /tmp/docker-20.10.10.tgz
+
+    - name: Extract tar archive
+      ansible.builtin.unarchive:
+        src: /tmp/docker-20.10.10.tgz
+        dest: /usr/local/bin
+        remote_src: yes
+        
+    - name: docker service
+      ansible.builtin.copy:
+        content: |
+          [Unit]
+          Description=Docker Application Container Engine
+          Documentation=https://docs.docker.com
+          After=network-online.target firewalld.service
+          Wants=network-online.target
+          [Service]
+          Type=notify
+          ExecStart=/usr/bin/dockerd ${DOCKERD_PARAMETER
+          ExecReload=/bin/kill -s HUP $MAINPID
+          LimitNOFILE=infinity
+          LimitNPROC=infinity
+          TimeoutStartSec=0
+          Delegate=yes
+          KillMode=process
+
+          Restart=on-failure
+
+          StartLimitBurst=3
+
+          StartLimitInterval=60s
+
+          [Install]
+
+          WantedBy=multi-user.target
+
+        dest: /etc/systemd/system/docker.service

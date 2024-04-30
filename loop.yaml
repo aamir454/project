@@ -1,0 +1,12 @@
+---
+- name: install multiple packages
+  hosts: worker2
+  tasks:
+    - name: package install
+      yum: mane={{item}} state=latest
+      with_items:
+      - make
+      - gcc
+      - httpd
+      - wget
+...

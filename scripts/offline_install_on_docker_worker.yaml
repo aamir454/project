@@ -1,0 +1,60 @@
+---
+- name: offline install
+  hosts: "{{DEPLOY_SERVER}}"
+  remote_user: root
+  gather_facts: false
+  tasks:
+  - name: sync env file
+    copy:
+      src: "{{ ENV_FILE}}"
+      dest: "/tmp/"
+    tags:
+      - always
+
+  - name: installHabor
+    script: on-premise.sh --env_file /tmp/{{ENV_FILE}} --work_dir {{WORK_DIR}} --executeFunction installHabor
+    tags:
+      - installHabor
+
+  - name: addProjectsToHarbor
+    script: on-premise.sh --env_file /tmp/{{ENV_FILE}} --work_dir {{WORK_DIR}} --executeFunction addProjectsToHarbor
+    tags:
+      - addProjectsToHarbor
+
+  - name: installRancher
+    script: on-premise.sh --env_file /tmp/{{ENV_FILE}} --work_dir {{WORK_DIR}} --executeFunction installRancher
+    register: out
+    tags:
+      - installRancher  
+
+  - name: print installRancher
+    debug: var=out.stdout_lines
+    tags:
+      - installRancher
+
+  - name: LoadRKEImage
+    script: on-premise.sh --env_file /tmp/{{ENV_FILE}} --work_dir {{WORK_DIR}} --executeFunction LoadRKEImage
+    tags:
+      - LoadRKEImage
+
+  - name: installGitea
+    script: on-premise.sh --env_file /tmp/{{ENV_FILE}} --work_dir {{WORK_DIR}} --executeFunction installGitea
+    register: out
+    tags:
+      - installGitea
+
+  - name: print installGitea
+    debug: var=out.stdout_lines
+    tags:
+      - installGitea
+
+  - name: installMinioBackup
+    script: on-premise.sh --env_file /tmp/{{ENV_FILE}} --work_dir {{WORK_DIR}} --executeFunction installMinioBackup
+    register: out
+    tags:
+      - installMinioBackup
+
+  - name: print installMinioBackup
+    debug: var=out.stdout_lines
+    tags:
+      - installMinioBackup

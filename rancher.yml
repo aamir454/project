@@ -1,0 +1,22 @@
+---
+- name: Install Docker CE 20.10.10 on CentOS 7
+  hosts: servers
+  become: yes
+  tasks:
+    - name: Create directory for Rancher
+      file:
+        path: /opt/rancher
+        state: directory
+
+    - name: Deploy Rancher server
+      docker_container:
+        name: rancher
+        image: rancher/rancher:v2.6.3
+        restart_policy: always
+        privileged: yes
+        volumes:
+          - /opt/rancher:/var/lib/rancher
+		  - /opt/rancher/certs:/etc/rancher/ssl
+        ports:
+          - "80:80"
+          - "443:443"
