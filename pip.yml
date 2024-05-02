@@ -1,0 +1,80 @@
+---
+- name: Install Python 3.10 and pip on CentOS 7
+  hosts: master1
+  become: yes
+
+  tasks:
+    - name: Install EPEL repository
+      yum:
+        name: epel-release
+        state: present
+
+    - name: Install Python 3.10 dependencies
+      yum:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - gcc
+        - openssl-devel
+        - bzip2-devel
+        - libffi-devel
+        - wget
+        - make
+        - zlib-devel
+        - tk-devel
+        - libuuid-devel
+        - gdbm-devel
+        - readline-devel
+        - sqlite-devel
+        - ncurses-devel
+        - xz-devel
+
+    - name: Download Python 3.10
+      get_url:
+        url: "https://www.python.org/ftp/python/3.10.0/Python-3.10.0.tgz"
+        dest: /tmp/Python-3.10.0.tgz
+
+    - name: Extract Python 3.10
+      unarchive:
+        src: /tmp/Python-3.10.0.tgz
+        dest: /tmp
+        remote_src: yes
+
+    - name: Configure and Install Python 3.10
+      shell: |
+        cd /tmp/Python-3.10.0
+        ./configure --prefix=/usr/local --enable-optimizations
+        make altinstall
+      args:
+        executable: /bin/bash
+
+    - name: Add Python 3.10 symlink
+      file:
+        src: /usr/local/bin/python3.10
+        dest: /usr/bin/python3.10
+        state: link
+
+    - name: Install pip for Python 3.10
+      shell: |
+        curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+        python3.10 get-pip.py
+      args:
+        chdir: /tmp
+
+    - name: Verify pip installation
+      command: pip21.0 --version
+      register: pip_version
+      changed_when: false
+
+    - name: Print pip version
+      debug:
+        msg: "Installed pip version for Python 3.10 is {{ pip_version.stdout }}"
+
+  handlers:
+    - name: Restart Services
+      systemd:
+        name: "{{ item }}"
+        state: restarted
+      loop:
+        - httpd
+        - nginx
