@@ -1,0 +1,28 @@
+---
+- name: Install Python 2 on Ubuntu
+  hosts: servers
+  become: true
+  tasks:
+    - name: Add deadsnakes PPA
+      ansible.builtin.apt_repository:
+        repo: ppa:deadsnakes/ppa
+        state: present
+
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: yes
+
+    - name: Install Python 2.7
+      ansible.builtin.apt:
+        name: python2.7
+        state: present
+
+    - name: FIX PIP 
+      shell: |
+        cp /usr/bin/python2.7 /usr/bin/python
+        curl "https://bootstrap.pypa.io/pip/2.7/get-pip.py" -o "get-pip.py"
+        python get-pip.py
+        pip install docker-py
+        pip install docker-compose
+        pip --version
+        

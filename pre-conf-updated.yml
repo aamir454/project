@@ -1,0 +1,197 @@
+---
+- name: Pre-Config
+  hosts: servers
+  become: yes
+  tasks:
+  
+    - name: Check if system is Ubuntu or CentOS
+      set_fact:
+        is_ubuntu: "{{ ansible_os_family == 'Debian' }}"
+        is_centos: "{{ ansible_os_family == 'RedHat' }}"
+
+    - name: Stop and disable firewall on Ubuntu
+      service:
+        name: ufw
+        state: stopped
+        enabled: no
+      when: is_ubuntu
+
+    - name: Stop and disable firewall on CentOS
+      service:
+        name: firewalld
+        state: stopped
+        enabled: no
+      when: is_centos
+      
+      
+    - name: firewall-disabled
+      debug:
+        msg: "============disable firewal Done============"
+        
+    - name: Disable SELinux
+      selinux:
+        state: disabled
+      when: is_centos        
+    - name: selinux-disabled   
+      debug:
+        msg: "============disable selinux Done============"
+
+    - name: disableSwap
+      shell: |
+        swapoff -a
+        sed -i 's/\(.*swap.*\)/# \1/g' /etc/fstab
+        sed -i -e 's/# #/#/g' /etc/fstab
+        sed -i -e '/net.ipv4.ip_nonlocal_bind/d' /etc/sysctl.conf
+        echo "net.ipv4.ip_nonlocal_bind = 1" | sudo tee -a /etc/sysctl.conf
+        sed -i -e '/net.ipv4.ip_forward/d' /etc/sysctl.conf
+        echo "net.ipv4.ip_forward = 1" | sudo tee -a /etc/sysctl.conf
+        sed -i -e '/net.bridge.bridge-nf-call-ip6tables/d' /etc/sysctl.conf
+        echo "net.bridge.bridge-nf-call-ip6tables = 1" | sudo tee -a /etc/sysctl.conf
+        sed -i -e '/net.bridge.bridge-nf-call-iptables/d' /etc/sysctl.conf
+        echo "net.bridge.bridge-nf-call-iptables = 1" | sudo tee -a /etc/sysctl.conf
+        sed -i -e '/vm.swappiness/d' /etc/sysctl.conf
+        echo "vm.swappiness=0" | sudo tee -a /etc/sysctl.conf
+        modprobe br_netfilter
+        sysctl -p
+      when: is_centos  
+        
+    - name: disableSwap
+      debug:
+        msg: "============disableSwap Done============"
+        
+    - name: network fix
+      shell: |
+        sudo iptables -P FORWARD ACCEPT
+        echo 'net.ipv4.ip_forward = 1' | sudo tee -a /etc/sysctl.d/50-docker-forward.conf
+        for mod in ip_tables ip_vs_sh ip_vs ip_vs_rr ip_vs_wrr; do sudo modprobe $mod; echo $mod | sudo tee -a /etc/modules-load.d/iptables.conf; done
+        sudo dnf -y install network-scripts
+        sudo systemctl enable network
+        sudo systemctl start network
+        sudo systemctl disable NetworkManager
+        sudo systemctl stop NetworkManager
+        echo NetworkManager stoped
+        sudo mkdir /etc/kubernetes
+        yum install -y yum-utils
+      when: is_centos
+
+      
+    - name: disableSwap
+      debug:
+        msg: "============network fix Done============"
+
+    - name: TimeDate
+      shell: |
+        timedatectl set-timezone Asia/Karachi
+    - name: TimeDate
+      debug:
+        msg: "============Time and Date set============"
+
+    - name: Install required packages
+      yum:
+        name:
+          - yum-utils
+          - device-mapper-persistent-data
+          - lvm2
+      when: is_centos  
+
+    - name: Add Docker CE repository
+      yum_repository:
+        name: docker-ce-stable
+        description: Docker CE Stable - $basearch
+        baseurl: https://download.docker.com/linux/centos/7/$basearch/stable
+        gpgcheck: yes
+        enabled: yes
+        gpgkey: https://download.docker.com/linux/centos/gpg
+      when: is_centos  
+
+    - name: Install specific version of Docker CE
+      yum:
+        name: docker-ce-20.10.10
+        state: present
+      when: is_centos  
+
+    - name: Start Docker service
+      service:
+        name: docker
+        state: started
+        enabled: yes
+      when: is_centos  
+        
+    - name: Download Docker client binary
+      get_url:
+        url: https://download.docker.com/linux/static/stable/x86_64/docker-20.10.10.tgz
+        dest: /tmp/docker-20.10.10.tgz
+      when: is_centos
+
+    - name: Extract Docker client binary
+      unarchive:
+        src: /tmp/docker-20.10.10.tgz
+        dest: /usr/local/bin
+        remote_src: yes
+        creates: /usr/local/bin
+      when: is_centos  
+
+    - name: Make Docker client executable
+      file:
+        path: /usr/local/bin
+        mode: +x       
+      when: is_centos
+
+
+    - name: docker version lock
+      shell: |
+        yum -y install yum-versionlock
+        yum versionlock add docker-ce
+        yum versionlock list docker-ce
+      when: is_centos  
+    - name: script
+      debug:
+        msg: "==========docker version lock succeded==========="
+
+
+    - name: docker compose
+      shell: |
+        curl -L "https://github.com/docker/compose/releases/download/1.23.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        chmod +x /usr/local/bin/docker-compose  
+    - name: script
+      debug:
+        msg: "==========docker compose succeded==========="
+        
+#with Ubuntu
+
+    - name: install prerequisites
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates 
+          - curl 
+          - gnupg-agent
+          - software-properties-common
+        update_cache: yes
+      when: is_ubuntu
+  
+    - name: add apt-key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+      when: is_ubuntu    
+  
+    - name: add docker repo
+      apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu focal stable
+      when: is_ubuntu    
+  
+    - name: install docker 
+      apt:
+        name: 
+          - docker-ce=5:20.10.5~3-0~ubuntu-focal
+          - docker-ce-cli=5:20.10.5~3-0~ubuntu-focal
+          - containerd.io
+        update_cache: yes
+      when: is_ubuntu
+
+    - name: services
+      shell: |
+        swapoff -a
+        sudo systemctl enable docker
+        sudo systemctl start docker
+      when: is_ubuntu        

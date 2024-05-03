@@ -1,0 +1,48 @@
+---
+- name: Install Docker 20.10.7 on Ubuntu
+  hosts: servers
+  become: true
+
+  tasks:
+    - name: Check if system is Ubuntu or CentOS
+      set_fact:
+        is_ubuntu: "{{ ansible_os_family == 'Debian' }}"
+        is_centos: "{{ ansible_os_family == 'RedHat' }}"
+        
+    - name: install prerequisites
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates 
+          - curl 
+          - gnupg-agent
+          - software-properties-common
+        update_cache: yes
+      when: is_ubuntu
+  
+    - name: add apt-key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+      when: is_ubuntu    
+  
+    - name: add docker repo
+      apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu focal stable
+      when: is_ubuntu    
+  
+    - name: install docker 
+      apt:
+        name: 
+          - docker-ce=5:20.10.5~3-0~ubuntu-focal
+          - docker-ce-cli=5:20.10.5~3-0~ubuntu-focal
+          - containerd.io
+          - docker-compose
+        update_cache: yes
+      when: is_ubuntu
+
+    - name: services
+      shell: |
+        swapoff -a
+        sudo systemctl enable docker
+        sudo systemctl start docker
+      when: is_ubuntu

@@ -1,0 +1,17 @@
+---
+- name: Disable SELinux
+  hosts: servers
+  become: true
+  gather_facts: yes
+
+  tasks:
+  
+    - name: Check if system is Ubuntu or CentOS
+      set_fact:
+        is_ubuntu: "{{ ansible_os_family == 'Debian' }}"
+        is_centos: "{{ ansible_os_family == 'RedHat' }}"  
+  
+    - name: Disable SELinux
+      selinux:
+        state: disabled
+      when: is_centos

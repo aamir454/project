@@ -1,19 +1,48 @@
 ---
-- name: Launch Nginx container
+- name: Launch rancher container
   hosts: servers
   become: yes  # If Docker requires sudo access
 
   tasks:
-    - name: Pull Nginx Docker image
-      docker_image:
-        name: nginx:latest
-
-    - name: Run Nginx container
+    - name: Pull a Docker Image
+      docker_image: 
+         name: rancher/rancher
+         tag: v2.6.3
+         source: pull
+      register: z
+    - name: Checking Pull Status
+      debug: 
+        var: z
+ 
+    - name: Rancher directory-1
+      file:
+        path: "/rancher"
+        state: directory
+        
+    - name: Rancher directory-2
+      file:
+        path: "/rancher/certs"
+        state: directory        
+ 
+    - name: Copying certs
+      copy: 
+        src: "./certs"
+        dest: "/rancher"
+ 
+    - name: Launching RANCHER CONTAINER
+      when: z.failed == false
       docker_container:
-        name: my_nginx_container
-        image: nginx:latest
+        name: rancher
+        image: rancher/rancher:v2.6.3
+        state: started
+        exposed_ports:
+          - "80"
+          - "443"
         ports:
-          - "80:80"  # Map container's port 80 to host's port 80
-        volumes:
-          - /root/nginx:/nginx  # Optional: Mount custom Nginx configuration
-        restart_policy: always  # Restart container if it stops
+          - "80:80"
+          - "443:443"
+        volumes: 
+          - /rancher/certs:/etc/rancher/ssl
+          - /rancher/opt:/var/lib/rancher
+        restart_policy: always
+        privileged: yes

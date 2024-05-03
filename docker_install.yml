@@ -1,0 +1,52 @@
+---
+- name: Install Docker 20.10 on Ubuntu and CentOS
+  hosts: servers
+  become: yes
+  gather_facts: yes
+
+  tasks:
+    - name: Check if system is Ubuntu or CentOS
+      set_fact:
+        is_ubuntu: "{{ ansible_os_family == 'Debian' }}"
+        is_centos: "{{ ansible_os_family == 'RedHat' }}"
+
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/{{ ansible_os_family }}/gpg
+        state: present
+      when: is_ubuntu
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: deb https://download.docker.com/linux/{{ ansible_os_family }} {{ ansible_distribution_release }} stable
+        state: present
+      when: is_ubuntu
+
+    - name: Install Docker package
+      package:
+        name: docker-ce-20.10.10
+        state: present
+      when: is_ubuntu
+
+    - name: Install Docker package
+      yum:
+        name: docker-ce-20.10.10
+        state: present
+      when: is_centos
+
+    - name: Start and enable Docker service
+      service:
+        name: docker
+        enabled: yes
+        state: started
+
+#    - name: Pull Docker image
+#      community.docker.docker_image:
+#        name: my_image
+#        pull: yes
+#
+#    - name: Run Docker container
+#      community.docker.docker_container:
+#        name: my_container
+#        image: my_image
+#        state: started
