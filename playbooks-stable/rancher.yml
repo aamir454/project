@@ -10,16 +10,45 @@
         python get-pip.py
         pip install docker-py        
   
-    - name: Pull Rancher container image
-      docker_image:
-        name: rancher/rancher:v2.6.3
-        source: pull
-
-    - name: Run Rancher container
+    - name: Pull a Docker Image
+      docker_image: 
+         name: rancher/rancher
+         tag: v2.6.3
+         source: pull
+      register: z
+    - name: Checking Pull Status
+      debug: 
+        var: z
+ 
+    - name: Rancher directory-1
+      file:
+        path: "/rancher"
+        state: directory
+        
+    - name: Rancher directory-2
+      file:
+        path: "/rancher/certs"
+        state: directory        
+ 
+    - name: Copying certs
+      copy: 
+        src: "../certs"
+        dest: "/rancher"
+ 
+    - name: Launching RANCHER CONTAINER
+      when: z.failed == false
       docker_container:
         name: rancher
         image: rancher/rancher:v2.6.3
+        state: started
+        exposed_ports:
+          - "80"
+          - "443"
         ports:
           - "80:80"
           - "443:443"
+        volumes: 
+          - /rancher/certs:/etc/rancher/ssl
+          - /rancher/opt:/var/lib/rancher
         restart_policy: always
+        privileged: yes
