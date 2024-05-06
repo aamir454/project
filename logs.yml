@@ -1,0 +1,10 @@
+- name: Read logs
+  hosts: servers
+  tasks:
+    - name: Get last 10 lines of log file
+      ansible.builtin.shell:
+        cmd: docker logs  rancher  2>&1 | grep "Bootstrap Password:"
+      register: last_10_lines
+
+    - debug:
+        var: last_10_lines.stdout_lines

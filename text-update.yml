@@ -1,0 +1,73 @@
+---
+- name: Update text file
+  hosts: servers
+  tasks:
+    - name: Update key1
+      lineinfile:
+        path: /gitea/gitea/conf/app.ini
+        regexp: '^SSH_LISTEN_PORT  = 22'
+        line: 'SSH_LISTEN_PORT  = 2222'
+        state: present
+                    
+    - name: Add line at specific line number
+      lineinfile:
+        path: /gitea/gitea/conf/app.ini
+        insertafter: '^SSH_LISTEN_PORT  = 2222$'
+        line: 'PROTOCOL         = https'
+
+    - name: Add line at specific line number
+      lineinfile:
+        path: /gitea/gitea/conf/app.ini
+        insertafter: '^SSH_LISTEN_PORT  = 2222$'
+        line: 'CERT_FILE         = cert.pem'
+
+    - name: Add line at specific line number
+      lineinfile:
+        path: /gitea/gitea/conf/app.ini
+        insertafter: '^SSH_LISTEN_PORT  = 2222$'
+        line: 'KEY_FILE         = key.pem'
+
+
+#    - name: Update key2
+#      lineinfile:
+#        path: /gitea/gitea/conf/app.ini
+#        regexp: '^key2='
+#        line: 'PROTOCOL         = https'
+#        state: present
+#        
+#    - name: Update key3
+#      lineinfile:
+#        path: /gitea/gitea/conf/app.ini
+#        regexp: '^key3='
+#        line: 'CERT_FILE         = cert.pem'
+#        state: present
+#
+#    - name: Update key4
+#      lineinfile:
+#        path: /gitea/gitea/conf/app.ini
+#        regexp: '^key4='
+#        line: 'KEY_FILE         = key.pem'
+#        state: present        
+#
+#
+#    - name: Add line under specific block
+#      lineinfile:
+#        path: /gitea/gitea/conf/app.ini
+#        regexp: '^SSH_LISTEN_PORT  = 22'
+#        insertafter: '^[server]'
+#        line: 'SSH_LISTEN_PORT  = 2222'
+#        backrefs: yes
+#        
+#    - name: Add line under specific block
+#      lineinfile:
+#        path: /gitea/gitea/conf/app.ini
+#        regexp: '^key6='
+#        insertafter: '^[server]'
+#        line: 'PROTOCOL         = https'
+#        backrefs: yes        
+#
+#    - name: Add line at specific line number
+#      lineinfile:
+#        path: /gitea/gitea/conf/app.ini
+#        insertafter: '^SSH_LISTEN_PORT  = 2222$'
+#        line: 'PROTOCOL         = https'

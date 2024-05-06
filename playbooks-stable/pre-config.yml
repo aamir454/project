@@ -69,9 +69,10 @@
         sudo systemctl start network
         sudo systemctl disable NetworkManager
         sudo systemctl stop NetworkManager
-        echo NetworkManager stoped
         sudo mkdir /etc/kubernetes
         yum install -y yum-utils
+        yum install -y iscsi-initiator-utils
+        yum install -y nfs-utils
       when: is_centos
 
       
@@ -194,4 +195,7 @@
         swapoff -a
         sudo systemctl enable docker
         sudo systemctl start docker
-      when: is_ubuntu        
+        systemctl disable ufw
+        sudo sed -i.bak '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+        apt-get install open-iscsi -y
+      when: is_ubuntu    

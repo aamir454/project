@@ -1,0 +1,78 @@
+---
+- name: Run Gitea Container
+  hosts: servers
+  become: yes
+
+  tasks:
+    - name: FIX PIP
+      shell: |
+        curl "https://bootstrap.pypa.io/pip/2.7/get-pip.py" -o "get-pip.py"
+        python get-pip.py
+        pip install docker-py        
+
+    - name: gitea directory
+      file:
+        path: "/gitea"
+        state: directory
+
+    - name: Copying certs
+      copy: 
+        src: "./certs/"
+        dest: "/gitea/gitea"
+        
+    - name: Copying certs
+      copy: 
+        src: "./gitea"
+        dest: "/gitea"
+
+    - name: Pull gitea container image
+      docker_image:
+        name: gitea/gitea:1.18.5
+        source: pull
+
+    - name: Run gitea container
+      docker_container:
+        name: gitea
+        image: gitea/gitea:1.18.5
+        env:
+          USER_UID: "1000"
+          USER_GID: "1000"
+        ports:
+          - "3000:3000"
+          - "2222:2222"
+        volumes: 
+          - /gitea:/data
+          - /gitea/gitea/sshd_config:/etc/ssh/sshd_config:ro
+          - /etc/timezone:/etc/timezone:ro
+          - /etc/localtime:/etc/localtime:ro          
+        restart_policy: always
+        
+    - name: Add delay
+      pause:
+        seconds: 5       
+        
+    - name: Update key1
+      lineinfile:
+        path: /gitea/gitea/conf/app.ini
+        regexp: '^SSH_LISTEN_PORT  = 22'
+        line: 'SSH_LISTEN_PORT  = 2222'
+        state: present
+                    
+    - name: Add line at specific line number
+      lineinfile:
+        path: /gitea/gitea/conf/app.ini
+        insertafter: '^SSH_LISTEN_PORT  = 2222$'
+        line: 'PROTOCOL         = https'
+
+    - name: Add line at specific line number
+      lineinfile:
+        path: /gitea/gitea/conf/app.ini
+        insertafter: '^SSH_LISTEN_PORT  = 2222$'
+        line: 'CERT_FILE         = cert.pem'
+
+    - name: Add line at specific line number
+      lineinfile:
+        path: /gitea/gitea/conf/app.ini
+        insertafter: '^SSH_LISTEN_PORT  = 2222$'
+        line: 'KEY_FILE         = key.pem'        
+        
