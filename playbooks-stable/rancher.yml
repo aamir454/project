@@ -20,12 +20,12 @@
       debug: 
         var: z
  
-    - name: Rancher directory-1
+    - name: Rancher directory
       file:
         path: "/rancher"
         state: directory
         
-    - name: Rancher directory-2
+    - name: Rancher cert directory
       file:
         path: "/rancher/certs"
         state: directory        
@@ -41,6 +41,8 @@
         name: rancher
         image: rancher/rancher:v2.6.3
         state: started
+        env:
+          CATTLE_BOOTSTRAP_PASSWORD: "admin@pak@"
         exposed_ports:
           - "80"
           - "443"
@@ -52,3 +54,11 @@
           - /rancher/opt:/var/lib/rancher
         restart_policy: always
         privileged: yes
+# ********************************************Enable if passwword variable is not set need to add time delay here      
+#    - name: RANCHER PASSWORD
+#      ansible.builtin.shell:
+#        cmd: docker logs  rancher  2>&1 | grep "Bootstrap Password:"
+#      register: last_10_lines
+#
+#    - debug:
+#        var: last_10_lines.stdout_lines        
