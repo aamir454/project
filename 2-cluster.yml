@@ -1,0 +1,49 @@
+---
+- hosts: servers
+  tasks:
+    - name: Create Rancher API Key
+      uri:
+        url: "https://rancher.amir.project.com/v3/token"
+        method: POST
+        body_format: json
+        body:
+          name: "Ansible Token"
+        headers:
+          Content-Type: "application/json"
+        status_code: 201
+        register: rancher_token
+
+    - name: Get Cluster Registration Token
+      uri:
+        url: "https://rancher.amir.project.com/v3/clusterregistrationtoken"
+        method: POST
+        body_format: json
+        body:
+          type: clusterRegistrationToken
+          name: "token-k88q6"
+        headers:
+          Content-Type: "application/json"
+          Authorization: "Bearer {{ rancher_token.json.token }}"
+        status_code: 201
+        register: cluster_token
+
+    - name: Save Cluster Registration Token
+      shell: echo "{{ cluster_token.json.id }}" > cluster_token.txt
+
+    - name: Deploy Kubernetes Cluster
+      uri:
+        url: "https://rancher.amir.project.com/v3/cluster"
+        method: POST
+        body_format: json
+        body:
+          type: cluster
+          name: "My Kubernetes Cluster"
+          rancherKubernetesEngineConfig:
+            ignoreDockerVersion: true
+          clusterTemplateId: "cluster-template:rancher-kubernetes-engine:v2"
+          fleetWorkspaceName: "default"
+          clusterRegistrationTokenId: "{{ lookup('file', 'cluster_token.txt') }}"
+        headers:
+          Content-Type: "application/json"
+          Authorization: "Bearer {{ rancher_token.json.token }}"
+        status_code: 201

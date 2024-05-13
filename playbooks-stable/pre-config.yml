@@ -193,9 +193,16 @@
     - name: services
       shell: |
         swapoff -a
-        sudo systemctl enable docker
-        sudo systemctl start docker
-        systemctl disable ufw
         sudo sed -i.bak '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
         apt-get install open-iscsi -y
       when: is_ubuntu    
+      
+    - name: Copy Root CA certificate to the target machine
+      copy:
+        src: ../certs/cacerts.crt
+        dest: /etc/pki/ca-trust/source/anchors/
+      when: is_centos        
+
+    - name: Update the trusted certificates store
+      command: update-ca-trust      
+      when: is_centos      

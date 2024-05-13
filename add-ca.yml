@@ -1,0 +1,12 @@
+---
+- name: Add Root CA Certificate to Trusted Store
+  hosts: servers
+  become: yes
+  tasks:
+    - name: Copy Root CA certificate to the target machine
+      copy:
+        src: ./certs/cacerts.crt
+        dest: /etc/pki/ca-trust/source/anchors/
+
+    - name: Update the trusted certificates store
+      command: update-ca-trust

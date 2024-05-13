@@ -37,6 +37,9 @@
         env:
           USER_UID: "1000"
           USER_GID: "1000"
+          SSH_DOMAIN: "git2.amir.project.com"
+          DOMAIN: "git2.amir.project.com"
+          ROOT_URL: "https://git2.amir.project.com:3000/"
         ports:
           - "3000:3000"
           - "2222:2222"
@@ -44,7 +47,8 @@
           - /gitea:/data
           - /gitea/gitea/sshd_config:/etc/ssh/sshd_config:ro
           - /etc/timezone:/etc/timezone:ro
-          - /etc/localtime:/etc/localtime:ro          
+          - /etc/localtime:/etc/localtime:ro
+#          - /etc/ssl/certs:/etc/ssl/certs          
         restart_policy: always
         
     - name: Add delay

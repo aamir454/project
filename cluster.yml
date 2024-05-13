@@ -1,0 +1,24 @@
+---
+- name: Deploy New Cluster on Rancher (Bare Metal)
+  hosts: servers
+  gather_facts: no
+  tasks:
+
+    - name: Download and install RKE binary
+      become: yes
+      get_url:
+        url: https://github.com/rancher/rke/releases/download/v{{ rke_version }}/rke_linux-amd64
+        dest: /usr/local/bin/rke
+        mode: 0755
+
+    - name: Generate RKE Cluster Config
+      command: rke config --name "{{ cluster_name }}" --addon ingress-nginx --addon local-path-provisioner --addon metrics-server
+      register: rke_config
+
+    - name: Save RKE Cluster Config
+      copy:
+        content: "{{ rke_config.stdout }}"
+        dest: "{{ playbook_dir }}/cluster.yml"
+
+    - name: Run RKE to create cluster
+      command: rke up --config "{{ playbook_dir }}/cluster.yml"
