@@ -198,6 +198,7 @@
         iptables -A OUTPUT -j ACCEPT -m comment --comment "Accept all outgoing"
         iptables -A INPUT -j ACCEPT -m comment --comment "Accept all incoming"
         iptables -P INPUT ACCEPT
+        sudo chmod 777 /var/run/docker.sock
       when: is_ubuntu    
       
     - name: Copy Root CA certificate to the target machine
