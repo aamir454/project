@@ -2,6 +2,11 @@
 - name: Pre-Config
   hosts: servers
   become: yes
+  vars:
+    docker_ce_version: "20.10.24-3.el9"
+    docker_ce_cli_version: "20.10.24-3.el9"
+    containerd_io_version: "1.6.19-3.1.el9"  
+  
   tasks:
   
     - name: Check if system is Ubuntu or CentOS
@@ -67,8 +72,6 @@
         sudo dnf -y install network-scripts
         sudo systemctl enable network
         sudo systemctl start network
-        sudo systemctl disable NetworkManager
-        sudo systemctl stop NetworkManager
         sudo mkdir /etc/kubernetes
         yum install -y yum-utils
         yum install -y iscsi-initiator-utils
@@ -95,48 +98,45 @@
           - lvm2
       when: is_centos  
 
-    - name: Add Docker CE repository
-      yum_repository:
-        name: docker-ce-stable
-        description: Docker CE Stable - $basearch
-        baseurl: https://download.docker.com/linux/centos/7/$basearch/stable
-        gpgcheck: yes
-        enabled: yes
-        gpgkey: https://download.docker.com/linux/centos/gpg
-      when: is_centos  
 
-    - name: Install specific version of Docker CE
+    - name: Install required packages
       yum:
-        name: docker-ce-20.10.10
+        name: yum-utils
         state: present
-      when: is_centos  
 
-    - name: Start Docker service
-      service:
+    - name: Add Docker repository
+      command: yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+      args:
+        creates: /etc/yum.repos.d/docker-ce.repo
+
+    - name: Install Docker CE specific version
+      yum:
+        name:
+          - "docker-ce-{{ docker_ce_version }}"
+          - "docker-ce-cli-{{ docker_ce_cli_version }}"
+          - "containerd.io-{{ containerd_io_version }}"
+        state: present
+
+    - name: Start and enable Docker service
+      systemd:
         name: docker
         state: started
         enabled: yes
-      when: is_centos  
-        
-    - name: Download Docker client binary
-      get_url:
-        url: https://download.docker.com/linux/static/stable/x86_64/docker-20.10.10.tgz
-        dest: /tmp/docker-20.10.10.tgz
-      when: is_centos
 
-    - name: Extract Docker client binary
-      unarchive:
-        src: /tmp/docker-20.10.10.tgz
-        dest: /usr/local/bin
-        remote_src: yes
-        creates: /usr/local/bin
-      when: is_centos  
+    - name: Add user to Docker group
+      user:
+        name: your_username
+        groups: docker
+        append: yes
+      become: true
+      become_user: root
+      # Replace 'your_username' with the actual username
 
-    - name: Make Docker client executable
-      file:
-        path: /usr/local/bin
-        mode: +x       
-      when: is_centos
+  handlers:
+    - name: Restart Docker
+      systemd:
+        name: docker
+        state: restarted
 
 
     - name: docker version lock
@@ -195,9 +195,6 @@
         swapoff -a
         sudo sed -i.bak '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
         apt-get install open-iscsi -y
-        iptables -A OUTPUT -j ACCEPT -m comment --comment "Accept all outgoing"
-        iptables -A INPUT -j ACCEPT -m comment --comment "Accept all incoming"
-        iptables -P INPUT ACCEPT
       when: is_ubuntu    
       
     - name: Copy Root CA certificate to the target machine

@@ -1,0 +1,49 @@
+---
+- name: Install specific version of Docker CE on RHEL 9
+  hosts: all
+  become: true
+
+  vars:
+    docker_ce_version: "20.10.24-3.el9"
+    docker_ce_cli_version: "20.10.24-3.el9"
+    containerd_io_version: "1.6.19-3.1.el9"
+
+  tasks:
+    - name: Install required packages
+      yum:
+        name: yum-utils
+        state: present
+
+    - name: Add Docker repository
+      command: yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+      args:
+        creates: /etc/yum.repos.d/docker-ce.repo
+
+    - name: Install Docker CE specific version
+      yum:
+        name:
+          - "docker-ce-{{ docker_ce_version }}"
+          - "docker-ce-cli-{{ docker_ce_cli_version }}"
+          - "containerd.io-{{ containerd_io_version }}"
+        state: present
+
+    - name: Start and enable Docker service
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Add user to Docker group
+      user:
+        name: your_username
+        groups: docker
+        append: yes
+      become: true
+      become_user: root
+      # Replace 'your_username' with the actual username
+
+  handlers:
+    - name: Restart Docker
+      systemd:
+        name: docker
+        state: restarted
