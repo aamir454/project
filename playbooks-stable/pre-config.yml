@@ -170,7 +170,7 @@
           - software-properties-common
         update_cache: yes
       when: is_ubuntu
-  
+# mathod_1 
     - name: add apt-key
       apt_key:
         url: https://download.docker.com/linux/ubuntu/gpg
@@ -189,6 +189,11 @@
           - containerd.io
         update_cache: yes
       when: is_ubuntu
+
+# mathod_2
+#    - name: install docker
+#      shell: |
+#        curl https://releases.rancher.com/install-docker/20.10.15.sh | sh
 
     - name: services
       shell: |
@@ -209,4 +214,14 @@
 
     - name: Update the trusted certificates store
       command: update-ca-trust      
-      when: is_centos      
+      when: is_centos
+      
+    - name: Ubuntu CA Update copt
+      copy:
+        src: ../certs/ubuntu_ca.crt
+        dest: /usr/local/share/ca-certificates/
+      when: is_ubuntu        
+
+    - name: Ubuntu CA Update
+      command: update-ca-certificates      
+      when: is_ubuntu      
